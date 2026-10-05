@@ -50,7 +50,7 @@ local function getParent()
     return player:WaitForChild("PlayerGui")
 end
 
--- props.W = font weight name ("Regular" | "Medium" | "SemiBold" | "Bold")
+-- props.W = font weight name ("Regular" | "SemiBold" | "SemiBold" | "Bold")
 local function new(class, props, kids)
     local i = Instance.new(class)
     if i:IsA("GuiBase2d") then i.AutoLocalize = false end
@@ -128,14 +128,64 @@ local function paintBanner(frame, radius, texture)
     local ov = new("Frame", { Name = "Ripples", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1),
         BorderSizePixel = 0, Parent = frame }, { corner(radius) })
     new("UIGradient", { Rotation = 24, Parent = ov, Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.94), NumberSequenceKeypoint.new(0.10, 0.84), NumberSequenceKeypoint.new(0.20, 0.95),
-        NumberSequenceKeypoint.new(0.32, 0.82), NumberSequenceKeypoint.new(0.44, 0.95), NumberSequenceKeypoint.new(0.57, 0.80),
-        NumberSequenceKeypoint.new(0.70, 0.95), NumberSequenceKeypoint.new(0.84, 0.84), NumberSequenceKeypoint.new(1, 0.94),
+        NumberSequenceKeypoint.new(0, 0.97), NumberSequenceKeypoint.new(0.12, 0.93), NumberSequenceKeypoint.new(0.25, 0.97),
+        NumberSequenceKeypoint.new(0.38, 0.92), NumberSequenceKeypoint.new(0.5, 0.97), NumberSequenceKeypoint.new(0.63, 0.92),
+        NumberSequenceKeypoint.new(0.76, 0.97), NumberSequenceKeypoint.new(0.88, 0.93), NumberSequenceKeypoint.new(1, 0.97),
     }) })
     if texture then
         new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = texture, ImageTransparency = 0.7,
             ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(64, 64), Parent = frame }, { corner(radius) })
     end
+end
+
+
+-- built-in vector icons drawn from frames (fonts lack these glyphs, so no boxes)
+local Icons = { grid = true, sprout = true, scan = true, world = true, sliders = true, star = true }
+local function drawIcon(parent, kind, px, pos)
+    local s = px / 18
+    local box = new("Frame", { Size = UDim2.fromOffset(px, px), Position = pos or UDim2.new(), BackgroundTransparency = 1, Parent = parent })
+    local parts = {}
+    local function bar(x, y, w, h, r, rot, color)
+        local f = new("Frame", { Position = UDim2.fromOffset(x * s, y * s), Size = UDim2.fromOffset(w * s, h * s), BorderSizePixel = 0,
+            BackgroundColor3 = color or T.TextOff, Parent = box }, { corner(r or 0) })
+        if rot then f.Rotation = rot end
+        if not color then parts[#parts + 1] = { f, "BackgroundColor3" } end
+        return f
+    end
+    local function ring(x, y, w, h, r, th)
+        local f = new("Frame", { Position = UDim2.fromOffset(x * s, y * s), Size = UDim2.fromOffset(w * s, h * s), BackgroundTransparency = 1,
+            BorderSizePixel = 0, Parent = box }, { corner(r * s) })
+        local st = stroke(T.TextOff, th or 1.5)
+        st.Parent = f
+        parts[#parts + 1] = { st, "Color" }
+        return f
+    end
+    if kind == "grid" then
+        ring(1.5, 1.5, 6, 6, 2.5); ring(10.5, 1.5, 6, 6, 2.5); ring(1.5, 10.5, 6, 6, 2.5); ring(10.5, 10.5, 6, 6, 2.5)
+    elseif kind == "sprout" then
+        bar(8, 7, 2, 9, 1); bar(5, 16, 8, 1.5, 1)
+        ring(1.5, 2.5, 6.5, 5, 3); ring(10, 2.5, 6.5, 5, 3)
+    elseif kind == "scan" then
+        for _, c in ipairs({ { 1, 1 }, { 12, 1 }, { 1, 15.5 }, { 12, 15.5 } }) do bar(c[1], c[2], 5, 1.5, 1) end
+        bar(1, 1, 1.5, 5, 1); bar(15.5, 1, 1.5, 5, 1); bar(1, 12, 1.5, 5, 1); bar(15.5, 12, 1.5, 5, 1)
+        ring(6, 6, 6, 6, 3)
+    elseif kind == "world" then
+        ring(1, 1, 16, 16, 8); bar(3.5, 7.75, 11, 2.5, 1.2, -45)
+    elseif kind == "sliders" then
+        bar(1, 3.5, 16, 1.5, 1); bar(1, 8.5, 16, 1.5, 1); bar(1, 13.5, 16, 1.5, 1)
+        ring(10, 1.5, 5, 5, 2.5); ring(3, 6.5, 5, 5, 2.5); ring(10, 11.5, 5, 5, 2.5)
+    elseif kind == "star" then
+        local white = Color3.new(1, 1, 1)
+        local v = bar(7.5, 0, 3, 18, 0, nil, white)
+        new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 1) }), Parent = v })
+        local h = bar(0, 7.5, 18, 3, 0, nil, white)
+        new("UIGradient", { Rotation = 0, Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 1) }), Parent = h })
+        bar(6, 6, 6, 6, 1, 45, white)
+    end
+    return {
+        Frame = box,
+        SetColor = function(c) for _, p in ipairs(parts) do tween(p[1], { [p[2]] = c }, 0.15) end end,
+    }
 end
 
 local function register(prefix, opts, obj, kind)
@@ -169,11 +219,11 @@ function Library:CreateNoti(cfg)
     end
     local card = new("Frame", { Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = T.Card,
         BorderSizePixel = 0, Parent = notiHolder }, { corner(5), stroke(T.Border), pad(10, 8, 10, 8), list(2) })
-    local title = new("TextLabel", { Size = UDim2.new(1, 0, 0, 16), BackgroundTransparency = 1, W = "Bold", TextSize = 13,
+    local title = new("TextLabel", { Size = UDim2.new(1, 0, 0, 16), BackgroundTransparency = 1, W = "Bold", TextSize = 16,
         Text = tostring(cfg.Title or "NERV"), TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = 1, Parent = card })
     onAccent(function(c) title.TextColor3 = shade(c, 0.2) end)
     new("TextLabel", { Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, W = "Regular",
-        TextSize = 12, TextWrapped = true, TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, Text = tostring(cfg.Desc or ""),
+        TextSize = 14, TextWrapped = true, TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, Text = tostring(cfg.Desc or ""),
         LayoutOrder = 2, Parent = card })
     task.delay(cfg.ShowTime or 4, function() card:Destroy() end)
 end
@@ -260,7 +310,7 @@ function Library:CreateWindow(cfg)
             parts[#parts + 1] = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(3, 1),
                 BorderSizePixel = 0, Parent = ring })
         else
-            parts[#parts + 1] = new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, W = "Bold", Text = "i", TextSize = 10, Parent = ring })
+            parts[#parts + 1] = new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, W = "Bold", Text = "i", TextSize = 12, Parent = ring })
         end
         onAccent(function(a)
             local light = shade(a, 0.45)
@@ -283,12 +333,11 @@ function Library:CreateWindow(cfg)
     if cfg.Logo then
         new("ImageLabel", { Position = UDim2.fromOffset(10, 6), Size = UDim2.fromOffset(26, 26), BackgroundTransparency = 1, Image = cfg.Logo, ZIndex = 2, Parent = brand })
     else
-        txt(brand, { Position = UDim2.fromOffset(8, 0), Size = UDim2.fromOffset(30, HEADER_H), W = "Bold", Text = "\u{2726}", TextSize = 24,
-            TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Center })
+        drawIcon(brand, "star", 22, UDim2.fromOffset(13, 8))
     end
-    txt(brand, { Position = UDim2.fromOffset(46, 6), Size = UDim2.new(1, -50, 0, 14), W = "Bold", TextSize = 11,
+    txt(brand, { Position = UDim2.fromOffset(46, 5), Size = UDim2.new(1, -50, 0, 16), W = "Bold", TextSize = 13,
         Text = tostring(cfg.Title or "NERV / DEV"), TextColor3 = Color3.new(1, 1, 1), TextTruncate = Enum.TextTruncate.AtEnd })
-    txt(brand, { Position = UDim2.fromOffset(46, 20), Size = UDim2.new(1, -50, 0, 12), W = "Medium", TextSize = 9,
+    txt(brand, { Position = UDim2.fromOffset(46, 21), Size = UDim2.new(1, -50, 0, 14), W = "SemiBold", TextSize = 11,
         Text = tostring(cfg.Subtitle or ""), TextColor3 = Color3.fromRGB(222, 232, 252), TextTruncate = Enum.TextTruncate.AtEnd })
 
     -- profile
@@ -301,25 +350,25 @@ function Library:CreateWindow(cfg)
         end)
         if ok and avatar.Parent then avatar.Image = img end
     end)
-    txt(prof, { Position = UDim2.fromOffset(45, 6), Size = UDim2.new(1, -50, 0, 14), W = "Bold", TextSize = 10,
+    txt(prof, { Position = UDim2.fromOffset(45, 5), Size = UDim2.new(1, -50, 0, 16), W = "Bold", TextSize = 12,
         Text = player.DisplayName, TextColor3 = T.Text, TextTruncate = Enum.TextTruncate.AtEnd })
-    txt(prof, { Position = UDim2.fromOffset(45, 20), Size = UDim2.new(1, -50, 0, 12), W = "Medium", TextSize = 9,
+    txt(prof, { Position = UDim2.fromOffset(45, 21), Size = UDim2.new(1, -50, 0, 14), W = "SemiBold", TextSize = 11,
         Text = "@" .. player.Name, TextColor3 = T.Dim, TextTruncate = Enum.TextTruncate.AtEnd })
 
     -- time
     local timeCard = card(otherW, 3)
     iconCircle(timeCard, "clock")
-    local timeLbl = txt(timeCard, { Position = UDim2.fromOffset(42, 6), Size = UDim2.new(1, -46, 0, 14), W = "Bold", TextSize = 10,
+    local timeLbl = txt(timeCard, { Position = UDim2.fromOffset(42, 5), Size = UDim2.new(1, -46, 0, 16), W = "Bold", TextSize = 12,
         Text = "TIME: --:--:--", TextColor3 = T.Text, TextTruncate = Enum.TextTruncate.AtEnd })
-    local dateLbl = txt(timeCard, { Position = UDim2.fromOffset(42, 20), Size = UDim2.new(1, -46, 0, 12), W = "Medium", TextSize = 9,
+    local dateLbl = txt(timeCard, { Position = UDim2.fromOffset(42, 21), Size = UDim2.new(1, -46, 0, 14), W = "SemiBold", TextSize = 11,
         Text = "Date: --", TextColor3 = T.Dim, TextTruncate = Enum.TextTruncate.AtEnd })
 
     -- fps / ping
     local fpsCard = card(otherW, 4)
     iconCircle(fpsCard, "info")
-    local fpsLbl = txt(fpsCard, { Position = UDim2.fromOffset(42, 6), Size = UDim2.new(1, -46, 0, 14), W = "Bold", TextSize = 10,
+    local fpsLbl = txt(fpsCard, { Position = UDim2.fromOffset(42, 5), Size = UDim2.new(1, -46, 0, 16), W = "Bold", TextSize = 12,
         Text = "FPS: 0", TextColor3 = T.Text })
-    local pingLbl = txt(fpsCard, { Position = UDim2.fromOffset(42, 20), Size = UDim2.new(1, -46, 0, 12), W = "Medium", TextSize = 9,
+    local pingLbl = txt(fpsCard, { Position = UDim2.fromOffset(42, 21), Size = UDim2.new(1, -46, 0, 14), W = "SemiBold", TextSize = 11,
         Text = "Ping: 0 ms", TextColor3 = T.Dim })
 
     local frames, lastTick = 0, os.clock()
@@ -347,7 +396,7 @@ function Library:CreateWindow(cfg)
 
     local RAIL_W = 108
     local rail = new("Frame", { Name = "Rail", Position = UDim2.fromOffset(8, 8), Size = UDim2.fromOffset(RAIL_W, BODY_H - 16),
-        BackgroundTransparency = 1, Parent = body }, { list(2) })
+        BackgroundTransparency = 1, Parent = body }, { list(4) })
     draggable(rail)
 
     local CX = 8 + RAIL_W + 7
@@ -356,7 +405,7 @@ function Library:CreateWindow(cfg)
 
     if cfg.Watermark then
         local wm = new("TextLabel", { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -12, 1, -3), Size = UDim2.fromOffset(0, 14),
-            AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, W = "Bold", TextSize = 11, TextColor3 = Color3.new(1, 1, 1),
+            AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, W = "Bold", TextSize = 13, TextColor3 = Color3.new(1, 1, 1),
             Text = tostring(cfg.Watermark), Parent = main })
         new("UIGradient", { Parent = wm, Color = ColorSequence.new({
             ColorSequenceKeypoint.new(0, Color3.fromRGB(176, 96, 255)),
@@ -416,23 +465,28 @@ function Library:CreateWindow(cfg)
         topts = topts or {}
         local Tab = { Name = name, Pages = {}, Current = nil }
 
-        local item = new("Frame", { Name = name .. "_Tab", Size = UDim2.new(1, 0, 0, 33), BackgroundColor3 = T.Select, BackgroundTransparency = 1,
+        local item = new("Frame", { Name = name .. "_Tab", Size = UDim2.new(1, 0, 0, 36), BackgroundColor3 = T.Select, BackgroundTransparency = 1,
             BorderSizePixel = 0, LayoutOrder = #Window.Tabs + 1, Parent = rail }, { corner(3) })
         local st = new("UIStroke", { Thickness = 1, Transparency = 1, Color = T.Border, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = item })
         item.BackgroundColor3 = T.Select
-        local leftBar = new("Frame", { Position = UDim2.fromOffset(-1, 3), Size = UDim2.new(0, 2, 1, -6), BorderSizePixel = 0, BackgroundTransparency = 1, Parent = item }, { corner(1) })
+        local leftBar = new("Frame", { Position = UDim2.fromOffset(-1, 4), Size = UDim2.new(0, 2, 1, -8), BorderSizePixel = 0, BackgroundTransparency = 1, Parent = item }, { corner(1) })
         onAccent(function(c) leftBar.BackgroundColor3 = c end)
 
-        local icon
-        if topts.Icon then
-            icon = new("ImageLabel", { Position = UDim2.fromOffset(9, 8), Size = UDim2.fromOffset(16, 16), BackgroundTransparency = 1,
-                Image = topts.Icon, ImageColor3 = T.TextOff, Parent = item })
+        local setIcon
+        local ic = topts.Icon
+        if type(ic) == "string" and ic:find("rbxasset") then
+            local img = new("ImageLabel", { Position = UDim2.fromOffset(9, 9), Size = UDim2.fromOffset(18, 18), BackgroundTransparency = 1,
+                Image = ic, ImageColor3 = T.TextOff, Parent = item })
+            setIcon = function(c) tween(img, { ImageColor3 = c }, 0.15) end
+        elseif type(ic) == "string" and Icons[ic] then
+            setIcon = drawIcon(item, ic, 18, UDim2.fromOffset(9, 9)).SetColor
         else
-            icon = new("TextLabel", { Position = UDim2.fromOffset(7, 0), Size = UDim2.fromOffset(20, 32), BackgroundTransparency = 1,
-                W = "Bold", Text = topts.Glyph or string.sub(name, 1, 1), TextSize = 15, TextColor3 = T.TextOff, Parent = item })
+            local g = new("TextLabel", { Position = UDim2.fromOffset(7, 0), Size = UDim2.fromOffset(22, 36), BackgroundTransparency = 1,
+                W = "Bold", Text = topts.Glyph or string.sub(name, 1, 1), TextSize = 18, TextColor3 = T.TextOff, Parent = item })
+            setIcon = function(c) tween(g, { TextColor3 = c }, 0.15) end
         end
-        local label = new("TextLabel", { Position = UDim2.fromOffset(31, 0), Size = UDim2.new(1, -50, 1, 0), BackgroundTransparency = 1,
-            W = "Medium", Text = name, TextSize = 10, TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, Parent = item })
+        local label = new("TextLabel", { Position = UDim2.fromOffset(37, 0), Size = UDim2.new(1, -56, 1, 0), BackgroundTransparency = 1,
+            W = "SemiBold", Text = name, TextSize = 12, TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, Parent = item })
         local click = new("TextButton", { Size = UDim2.new(1, -20, 1, 0), BackgroundTransparency = 1, Text = "", Parent = item })
 
         -- three-dot menu button
@@ -452,12 +506,12 @@ function Library:CreateWindow(cfg)
             tween(st, { Transparency = on and 0 or 1 }, 0.15)
             tween(leftBar, { BackgroundTransparency = on and 0 or 1 }, 0.15)
             tween(label, { TextColor3 = on and T.Text or T.TextOff }, 0.15)
-            if icon:IsA("ImageLabel") then tween(icon, { ImageColor3 = on and T.Accent or T.TextOff }, 0.15)
-            else tween(icon, { TextColor3 = on and T.Accent or T.TextOff }, 0.15) end
+            setIcon(on and T.Accent or T.TextOff)
+            setWeight(label, on and "Bold" or "SemiBold")
         end
 
         -- page tab bar (only visible while this rail tab is selected)
-        local bar = new("Frame", { Name = name .. "_Pages", Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1, Visible = false, Parent = content },
+        local bar = new("Frame", { Name = name .. "_Pages", Size = UDim2.new(1, 0, 0, 25), BackgroundTransparency = 1, Visible = false, Parent = content },
             { pad(2, 0, 0, 0), list(6, Enum.FillDirection.Horizontal) })
 
         function Tab:_hide()
@@ -479,13 +533,13 @@ function Library:CreateWindow(cfg)
             local Page = { Name = pname, Sections = {} }
 
             local btn = new("TextButton", { Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = T.Select,
-                BackgroundTransparency = 1, AutoButtonColor = false, W = "Medium", Text = pname, TextSize = 10, TextColor3 = T.TextOff,
+                BackgroundTransparency = 1, AutoButtonColor = false, W = "SemiBold", Text = pname, TextSize = 12, TextColor3 = T.TextOff,
                 LayoutOrder = #Tab.Pages + 1, Parent = bar }, { corner(4), pad(9, 0, 9, 0) })
-            local underline = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -1), Size = UDim2.new(1, -18, 0, 2),
+            local underline = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, 0), Size = UDim2.new(1, 0, 0, 2),
                 BorderSizePixel = 0, Visible = false, Parent = btn }, { corner(1) })
             onAccent(function(c) underline.BackgroundColor3 = c end)
 
-            local scroll = new("ScrollingFrame", { Name = pname .. "_Scroll", Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 1, -26),
+            local scroll = new("ScrollingFrame", { Name = pname .. "_Scroll", Position = UDim2.fromOffset(0, 31), Size = UDim2.new(1, 0, 1, -31),
                 BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = T.Border, Active = true,
                 CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false, Parent = content }, { pad(0, 0, 4, 4) })
             Page.Scroll = scroll
@@ -500,7 +554,7 @@ function Library:CreateWindow(cfg)
             local colL, colR = column(1), column(2)
 
             function Page:_paint(on)
-                setWeight(btn, on and "Bold" or "Medium")
+                setWeight(btn, on and "Bold" or "SemiBold")
                 btn.TextColor3 = on and shade(T.Accent, 0.3) or T.TextOff
                 btn.BackgroundTransparency = on and 0.3 or 1
                 underline.Visible = on
@@ -527,9 +581,9 @@ function Library:CreateWindow(cfg)
 
                 if title then
                     -- flat strip flush with the top edge of the group
-                    local banner = new("Frame", { Size = UDim2.new(1, 0, 0, 16), BorderSizePixel = 0, LayoutOrder = 0, Parent = sec })
+                    local banner = new("Frame", { Size = UDim2.new(1, 0, 0, 19), BorderSizePixel = 0, LayoutOrder = 0, Parent = sec })
                     paintBanner(banner, 0, cfg.BannerTexture)
-                    new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, W = "SemiBold", Text = title, TextSize = 9,
+                    new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, W = "SemiBold", Text = title, TextSize = 11,
                         TextColor3 = Color3.fromRGB(236, 242, 255), ZIndex = 2, Parent = banner })
                 end
 
@@ -544,7 +598,7 @@ function Library:CreateWindow(cfg)
 
                 -- small bold caption above a control
                 local function caption(parentF, text, order)
-                    return new("TextLabel", { Size = UDim2.new(1, 0, 0, 12), BackgroundTransparency = 1, W = "Bold", Text = text, TextSize = 10,
+                    return new("TextLabel", { Size = UDim2.new(1, 0, 0, 15), BackgroundTransparency = 1, W = "Bold", Text = text, TextSize = 12,
                         TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = order, Parent = parentF })
                 end
 
@@ -553,24 +607,24 @@ function Library:CreateWindow(cfg)
                     callback = callback or opts.Callback or noop
                     local state = opts.Default or false
                     local boldOn = opts.BoldWhenOn ~= false
-                    local row = new("Frame", { Name = "Toggle", Size = UDim2.new(1, 0, 0, 16), BackgroundTransparency = 1, LayoutOrder = nextOrder(), Parent = sbody })
-                    local lbl = new("TextLabel", { Size = UDim2.new(1, -34, 1, 0), BackgroundTransparency = 1, W = "Medium", Text = opts.Title,
-                        TextSize = 10, TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = row })
-                    local pill = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(26, 14),
+                    local row = new("Frame", { Name = "Toggle", Size = UDim2.new(1, 0, 0, 19), BackgroundTransparency = 1, LayoutOrder = nextOrder(), Parent = sbody })
+                    local lbl = new("TextLabel", { Size = UDim2.new(1, -38, 1, 0), BackgroundTransparency = 1, W = "SemiBold", Text = opts.Title,
+                        TextSize = 12, TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = row })
+                    local pill = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(30, 16),
                         BackgroundColor3 = T.Off, BorderSizePixel = 0, Parent = row }, { corner(7) })
                     local pst = stroke(T.Border, 1, 0.4)
                     pst.Parent = pill
-                    local knob = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 2, 0.5, 0), Size = UDim2.fromOffset(9, 9),
+                    local knob = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 2, 0.5, 0), Size = UDim2.fromOffset(12, 12),
                         BackgroundColor3 = T.KnobOff, BorderSizePixel = 0, Parent = pill }, { corner(5) })
                     local click = new("TextButton", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 3, Parent = row })
 
                     local function paint(v)
                         tween(pill, { BackgroundColor3 = v and T.Accent or T.Off }, 0.15)
                         tween(pst, { Color = v and shade(T.Accent, 0.3) or T.Border, Transparency = v and 0 or 0.4 }, 0.15)
-                        tween(knob, { Position = v and UDim2.new(1, -11, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
+                        tween(knob, { Position = v and UDim2.new(1, -14, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
                             BackgroundColor3 = v and Color3.new(1, 1, 1) or T.KnobOff }, 0.15)
                         lbl.TextColor3 = v and T.Text or T.TextOff
-                        setWeight(lbl, (v and boldOn) and "Bold" or "Medium")
+                        setWeight(lbl, (v and boldOn) and "Bold" or "SemiBold")
                     end
                     onAccent(function(c) if state then pill.BackgroundColor3 = c end end)
                     click.MouseButton1Click:Connect(function()
@@ -588,8 +642,8 @@ function Library:CreateWindow(cfg)
                 ---------------- button
                 function Section:AddButton(opts, callback)
                     callback = callback or opts.Callback or noop
-                    local b = new("TextButton", { Name = "Button", Size = UDim2.new(1, 0, 0, 23), BackgroundColor3 = T.Accent, BorderSizePixel = 0,
-                        AutoButtonColor = false, W = "Bold", Text = opts.Title, TextSize = 10, TextColor3 = Color3.new(1, 1, 1),
+                    local b = new("TextButton", { Name = "Button", Size = UDim2.new(1, 0, 0, 27), BackgroundColor3 = T.Accent, BorderSizePixel = 0,
+                        AutoButtonColor = false, W = "Bold", Text = opts.Title, TextSize = 12, TextColor3 = Color3.new(1, 1, 1),
                         LayoutOrder = nextOrder(), Parent = sbody }, { corner(3) })
                     new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(176, 188, 214)), Parent = b })
                     local bst = stroke(T.Accent, 1)
@@ -604,7 +658,7 @@ function Library:CreateWindow(cfg)
                 ---------------- label (status line)
                 function Section:AddLabel(opts)
                     local text = new("TextLabel", { Name = "Label", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1,
-                        W = "Regular", Text = tostring(type(opts) == "table" and opts.Title or opts), TextSize = 9, TextWrapped = true,
+                        W = "SemiBold", Text = tostring(type(opts) == "table" and opts.Title or opts), TextSize = 11, TextWrapped = true,
                         TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = nextOrder(), Parent = sbody })
                     return {
                         SetText = function(_, s) text.Text = tostring(s) end,
@@ -618,12 +672,12 @@ function Library:CreateWindow(cfg)
                     local holder = new("Frame", { Name = "TextBox", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1,
                         LayoutOrder = nextOrder(), Parent = sbody }, { list(5) })
                     if opts.Title then caption(holder, opts.Title, 0) end
-                    local box = new("Frame", { Size = UDim2.new(1, 0, 0, 24), BackgroundColor3 = T.Element, BorderSizePixel = 0, LayoutOrder = 1, Parent = holder },
+                    local box = new("Frame", { Size = UDim2.new(1, 0, 0, 27), BackgroundColor3 = T.Element, BorderSizePixel = 0, LayoutOrder = 1, Parent = holder },
                         { corner(4) })
                     local bst = stroke(T.Border, 1, 0.5)
                     bst.Parent = box
                     local input = new("TextBox", { Position = UDim2.fromOffset(9, 0), Size = UDim2.new(1, -18, 1, 0), BackgroundTransparency = 1,
-                        W = "Medium", TextSize = 10, TextColor3 = T.Text, Text = opts.Default or "", PlaceholderText = opts.Placeholder or "",
+                        W = "SemiBold", TextSize = 12, TextColor3 = T.Text, Text = opts.Default or "", PlaceholderText = opts.Placeholder or "",
                         PlaceholderColor3 = T.Dim, ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
                         Parent = box })
                     input.Focused:Connect(function() tween(bst, { Color = T.Accent }, 0.1) end)
@@ -645,16 +699,16 @@ function Library:CreateWindow(cfg)
                     local function round(v) return math.floor(v * mult + 0.5) / mult end
                     local value = math.clamp(round(opts.Default or min), min, max)
 
-                    local row = new("Frame", { Name = "Slider", Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1, LayoutOrder = nextOrder(), Parent = sbody })
-                    new("TextLabel", { Size = UDim2.new(1, -50, 0, 13), BackgroundTransparency = 1, W = "Medium", Text = opts.Title, TextSize = 10,
+                    local row = new("Frame", { Name = "Slider", Size = UDim2.new(1, 0, 0, 34), BackgroundTransparency = 1, LayoutOrder = nextOrder(), Parent = sbody })
+                    new("TextLabel", { Size = UDim2.new(1, -50, 0, 16), BackgroundTransparency = 1, W = "SemiBold", Text = opts.Title, TextSize = 12,
                         TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, Parent = row })
-                    local val = new("TextLabel", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(46, 13),
-                        BackgroundTransparency = 1, W = "Bold", TextSize = 10, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Right, Parent = row })
-                    local track_ = new("Frame", { Position = UDim2.fromOffset(0, 19), Size = UDim2.new(1, 0, 0, 5), BackgroundColor3 = T.Off, BorderSizePixel = 0,
+                    local val = new("TextLabel", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(46, 16),
+                        BackgroundTransparency = 1, W = "Bold", TextSize = 12, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Right, Parent = row })
+                    local track_ = new("Frame", { Position = UDim2.fromOffset(0, 24), Size = UDim2.new(1, 0, 0, 6), BackgroundColor3 = T.Off, BorderSizePixel = 0,
                         Parent = row }, { corner(3) })
                     local fill = new("Frame", { Size = UDim2.fromScale(0, 1), BorderSizePixel = 0, Parent = track_ }, { corner(3) })
                     onAccent(function(c) fill.BackgroundColor3 = c end)
-                    local hit = new("TextButton", { Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 1, -14), BackgroundTransparency = 1, Text = "", Parent = row })
+                    local hit = new("TextButton", { Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 1, -18), BackgroundTransparency = 1, Text = "", Parent = row })
 
                     local function render(animate)
                         local a = (max == min) and 0 or (value - min) / (max - min)
@@ -720,16 +774,22 @@ function Library:CreateWindow(cfg)
                     local holder = new("Frame", { Name = "Dropdown", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1,
                         LayoutOrder = nextOrder(), Parent = sbody }, { list(5) })
                     if opts.Title then caption(holder, opts.Title, 0) end
-                    local box = new("Frame", { Size = UDim2.new(1, 0, 0, 23), BackgroundColor3 = T.Element, BorderSizePixel = 0, LayoutOrder = 1, Parent = holder },
+                    local box = new("Frame", { Size = UDim2.new(1, 0, 0, 27), BackgroundColor3 = T.Element, BorderSizePixel = 0, LayoutOrder = 1, Parent = holder },
                         { corner(4) })
                     local bst = stroke(T.Border, 1, 0.5)
                     bst.Parent = box
-                    local vtext = new("TextLabel", { Position = UDim2.fromOffset(9, 0), Size = UDim2.new(1, -30, 1, 0), BackgroundTransparency = 1, W = "Medium",
-                        TextSize = 10, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = box })
+                    local vtext = new("TextLabel", { Position = UDim2.fromOffset(9, 0), Size = UDim2.new(1, -30, 1, 0), BackgroundTransparency = 1, W = "SemiBold",
+                        TextSize = 12, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = box })
                     -- up/down chevrons on the right
-                    for idx, g in ipairs({ "\u{25B2}", "\u{25BC}" }) do
-                        new("TextLabel", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -9, 0.5, idx == 1 and -3 or 3), Size = UDim2.fromOffset(9, 6),
-                            BackgroundTransparency = 1, W = "Regular", Text = g, TextSize = 6, TextColor3 = T.TextOff, Parent = box })
+                    for idx = 1, 2 do
+                        local up = idx == 1
+                        local ch = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -9, 0.5, up and -4 or 4),
+                            Size = UDim2.fromOffset(8, 4), BackgroundTransparency = 1, Parent = box })
+                        for side = 0, 1 do
+                            local rot = ((side == 0) == up) and -40 or 40
+                            new("Frame", { Position = UDim2.fromOffset(side * 3.5, 1.2), Size = UDim2.fromOffset(5, 1.4), BorderSizePixel = 0,
+                                Rotation = rot, BackgroundColor3 = T.TextOff, Parent = ch }, { corner(1) })
+                        end
                     end
                     local dbtn = new("TextButton", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 3, Parent = box })
 
@@ -760,8 +820,8 @@ function Library:CreateWindow(cfg)
                         items = {}
                         for i, name in ipairs(options) do
                             local b = new("TextButton", { Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1, Text = "", LayoutOrder = i, ZIndex = 62, Parent = pscroll })
-                            local l = new("TextLabel", { Position = UDim2.fromOffset(7, 0), Size = UDim2.new(1, -22, 1, 0), BackgroundTransparency = 1, W = "Medium",
-                                Text = tostring(name), TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 62, Parent = b })
+                            local l = new("TextLabel", { Position = UDim2.fromOffset(7, 0), Size = UDim2.new(1, -22, 1, 0), BackgroundTransparency = 1, W = "SemiBold",
+                                Text = tostring(name), TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 62, Parent = b })
                             local dot = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -6, 0.5, 0), Size = UDim2.fromOffset(5, 5), BorderSizePixel = 0,
                                 ZIndex = 62, Parent = b }, { corner(3) })
                             onAccent(function(c) dot.BackgroundColor3 = c end)
@@ -827,11 +887,11 @@ function Library:CreateWindow(cfg)
                     local listening = false
                     if opts.ToggleUI and key then setToggleKey(key) end
 
-                    local row = new("Frame", { Name = "Keybind", Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1, LayoutOrder = nextOrder(), Parent = sbody })
-                    new("TextLabel", { Size = UDim2.new(1, -80, 1, 0), BackgroundTransparency = 1, W = "Medium", Text = opts.Title, TextSize = 10,
+                    local row = new("Frame", { Name = "Keybind", Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1, LayoutOrder = nextOrder(), Parent = sbody })
+                    new("TextLabel", { Size = UDim2.new(1, -80, 1, 0), BackgroundTransparency = 1, W = "SemiBold", Text = opts.Title, TextSize = 12,
                         TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, Parent = row })
-                    local kb = new("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(70, 18),
-                        BackgroundColor3 = T.Element, BorderSizePixel = 0, AutoButtonColor = false, W = "Bold", Text = keyName(key), TextSize = 9,
+                    local kb = new("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(76, 20),
+                        BackgroundColor3 = T.Element, BorderSizePixel = 0, AutoButtonColor = false, W = "Bold", Text = keyName(key), TextSize = 11,
                         TextColor3 = T.Text, Parent = row }, { corner(4), stroke(T.Border) })
 
                     kb.MouseButton1Click:Connect(function()
