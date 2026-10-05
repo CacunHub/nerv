@@ -1,37 +1,3 @@
---[[
-    NervUI v2  -  rebuild of the "NERV / DEV" Grand Piece Online menu
-    Built at the screenshot's own proportions (644x376) and scaled up with UIScale.
-
-    local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/CacunHub/nerv/refs/heads/main/NervUI.lua"))()
-
-    local Window = Library:CreateWindow({
-        Title = "NERV / DEV", Subtitle = "Grand Piece Online",
-        Logo = nil,                      -- rbxassetid:// (falls back to a star glyph)
-        Watermark = "Developer Mode",    -- nil = off
-        ToggleKey = Enum.KeyCode.RightShift,
-        Scale = 1.2,                     -- UI scale (1 = screenshot size)
-        Transparency = 0.05,             -- panel transparency (0 = solid)
-        BannerTexture = nil,             -- optional tiled rbxassetid:// for the blue banners
-        FontFamily = nil,                -- default Inter
-    })
-
-    local Tab  = Window:AddTab("Farm", { Glyph = "x", Icon = nil, OnMenu = function() end })
-    local Page = Tab:AddPage("Bosses")
-    local Sec  = Page:AddSection("Bounty Farm", "Left")   -- title nil = no banner
-
-    Sec:AddToggle  ({ Title, Default, BoldWhenOn, Flag }, cb(bool))        -> { Set, Get }
-    Sec:AddButton  ({ Title }, cb())                                        -> { Fire, SetText }
-    Sec:AddLabel   ({ Title })                                              -> { SetText, SetColor }
-    Sec:AddTextBox ({ Title, Default, Placeholder, Flag }, cb(text))        -> { Set, Get }
-    Sec:AddSlider  ({ Title, Min, Max, Default, Decimals, Flag }, cb(n))    -> { Set, Get }
-    Sec:AddDropdown({ Title, Options, Default, Multi, Flag }, cb(v))        -> { Set, Get, Refresh }
-    Sec:AddKeybind ({ Title, Default, ToggleUI, Flag }, cb())               -> { Set, Get }
-
-    Set(v, true) also fires the callback (SaveManager). Controls register in Library.Flags[Flag].
-    FeralLib aliases: CreateMain / CreatePage / CreateSection / CreateToggle / CreateButton /
-    CreateLabel / CreateBox / CreateSlider / CreateDropdown / CreateBind / CreateNoti.
-]]
-
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
@@ -41,16 +7,17 @@ local player = Players.LocalPlayer
 
 local Library = {
     Theme = {
-        Body = Color3.fromRGB(9, 10, 13),
-        Panel = Color3.fromRGB(15, 17, 22),
-        Card = Color3.fromRGB(13, 15, 20),
-        Element = Color3.fromRGB(21, 23, 30),
-        Border = Color3.fromRGB(30, 33, 42),
-        Accent = Color3.fromRGB(59, 114, 222),
+        Body = Color3.fromRGB(13, 15, 17),
+        Panel = Color3.fromRGB(14, 16, 19),
+        Card = Color3.fromRGB(9, 11, 16),
+        Select = Color3.fromRGB(20, 22, 27),
+        Element = Color3.fromRGB(21, 23, 27),
+        Border = Color3.fromRGB(28, 31, 38),
+        Accent = Color3.fromRGB(60, 123, 202),
         Text = Color3.fromRGB(235, 237, 242),
         TextOff = Color3.fromRGB(176, 180, 190),
         Dim = Color3.fromRGB(118, 123, 136),
-        Off = Color3.fromRGB(26, 28, 36),
+        Off = Color3.fromRGB(17, 19, 23),
         KnobOff = Color3.fromRGB(62, 65, 76),
     },
     Windows = {},
@@ -153,9 +120,9 @@ local function paintBanner(frame, radius, texture)
     local g = new("UIGradient", { Rotation = 0, Parent = frame })
     onAccent(function(c)
         g.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, shade(c, -0.18)),
-            ColorSequenceKeypoint.new(0.5, shade(c, 0.04)),
-            ColorSequenceKeypoint.new(1, shade(c, -0.14)),
+            ColorSequenceKeypoint.new(0, shade(c, -0.22)),
+            ColorSequenceKeypoint.new(0.55, shade(c, 0.0)),
+            ColorSequenceKeypoint.new(1, shade(c, 0.06)),
         })
     end)
     local ov = new("Frame", { Name = "Ripples", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1),
@@ -449,11 +416,11 @@ function Library:CreateWindow(cfg)
         topts = topts or {}
         local Tab = { Name = name, Pages = {}, Current = nil }
 
-        local item = new("Frame", { Name = name .. "_Tab", Size = UDim2.new(1, 0, 0, 32), BackgroundColor3 = T.Accent, BackgroundTransparency = 1,
+        local item = new("Frame", { Name = name .. "_Tab", Size = UDim2.new(1, 0, 0, 33), BackgroundColor3 = T.Select, BackgroundTransparency = 1,
             BorderSizePixel = 0, LayoutOrder = #Window.Tabs + 1, Parent = rail }, { corner(3) })
         local st = new("UIStroke", { Thickness = 1, Transparency = 1, Color = T.Border, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = item })
-        onAccent(function(c) item.BackgroundColor3 = shade(c, -0.55) end)
-        local leftBar = new("Frame", { Size = UDim2.new(0, 2, 1, 0), BorderSizePixel = 0, BackgroundTransparency = 1, Parent = item })
+        item.BackgroundColor3 = T.Select
+        local leftBar = new("Frame", { Position = UDim2.fromOffset(-1, 3), Size = UDim2.new(0, 2, 1, -6), BorderSizePixel = 0, BackgroundTransparency = 1, Parent = item }, { corner(1) })
         onAccent(function(c) leftBar.BackgroundColor3 = c end)
 
         local icon
@@ -481,7 +448,7 @@ function Library:CreateWindow(cfg)
         dots.MouseButton1Click:Connect(function() if topts.OnMenu then task.spawn(topts.OnMenu, Tab) end end)
 
         local function paint(on)
-            tween(item, { BackgroundTransparency = on and 0.35 or 1 }, 0.15)
+            tween(item, { BackgroundTransparency = on and 0.1 or 1 }, 0.15)
             tween(st, { Transparency = on and 0 or 1 }, 0.15)
             tween(leftBar, { BackgroundTransparency = on and 0 or 1 }, 0.15)
             tween(label, { TextColor3 = on and T.Text or T.TextOff }, 0.15)
@@ -491,7 +458,7 @@ function Library:CreateWindow(cfg)
 
         -- page tab bar (only visible while this rail tab is selected)
         local bar = new("Frame", { Name = name .. "_Pages", Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1, Visible = false, Parent = content },
-            { pad(11, 0, 0, 0), list(22, Enum.FillDirection.Horizontal) })
+            { pad(2, 0, 0, 0), list(6, Enum.FillDirection.Horizontal) })
 
         function Tab:_hide()
             paint(false)
@@ -511,8 +478,12 @@ function Library:CreateWindow(cfg)
         function Tab:AddPage(pname)
             local Page = { Name = pname, Sections = {} }
 
-            local btn = new("TextButton", { Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1,
-                W = "Medium", Text = pname, TextSize = 10, TextColor3 = T.TextOff, LayoutOrder = #Tab.Pages + 1, Parent = bar })
+            local btn = new("TextButton", { Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = T.Select,
+                BackgroundTransparency = 1, AutoButtonColor = false, W = "Medium", Text = pname, TextSize = 10, TextColor3 = T.TextOff,
+                LayoutOrder = #Tab.Pages + 1, Parent = bar }, { corner(4), pad(9, 0, 9, 0) })
+            local underline = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -1), Size = UDim2.new(1, -18, 0, 2),
+                BorderSizePixel = 0, Visible = false, Parent = btn }, { corner(1) })
+            onAccent(function(c) underline.BackgroundColor3 = c end)
 
             local scroll = new("ScrollingFrame", { Name = pname .. "_Scroll", Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 1, -26),
                 BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = T.Border, Active = true,
@@ -530,7 +501,9 @@ function Library:CreateWindow(cfg)
 
             function Page:_paint(on)
                 setWeight(btn, on and "Bold" or "Medium")
-                btn.TextColor3 = on and T.Text or T.TextOff
+                btn.TextColor3 = on and shade(T.Accent, 0.3) or T.TextOff
+                btn.BackgroundTransparency = on and 0.3 or 1
+                underline.Visible = on
                 scroll.Visible = on and Window.Selected == Tab
             end
             function Page:Select()
@@ -548,20 +521,20 @@ function Library:CreateWindow(cfg)
                 side = side or ((#Page.Sections % 2 == 0) and "Left" or "Right")
                 local col = (side == "Right") and colR or colL
                 local sec = new("Frame", { Name = tostring(title or "Section") .. "_Section", Size = UDim2.new(1, 0, 0, 0),
-                    AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = T.Panel, BackgroundTransparency = panelT, BorderSizePixel = 0,
+                    AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = T.Panel, BackgroundTransparency = panelT, BorderSizePixel = 0, ClipsDescendants = true,
                     LayoutOrder = #Page.Sections + 1, Parent = col }, { corner(4), stroke(T.Border), list(0) })
                 Page.Sections[#Page.Sections + 1] = sec
 
                 if title then
                     -- flat strip flush with the top edge of the group
-                    local banner = new("Frame", { Size = UDim2.new(1, 0, 0, 15), BorderSizePixel = 0, LayoutOrder = 0, Parent = sec }, { corner(3) })
-                    paintBanner(banner, 3, cfg.BannerTexture)
+                    local banner = new("Frame", { Size = UDim2.new(1, 0, 0, 16), BorderSizePixel = 0, LayoutOrder = 0, Parent = sec })
+                    paintBanner(banner, 0, cfg.BannerTexture)
                     new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, W = "SemiBold", Text = title, TextSize = 9,
                         TextColor3 = Color3.fromRGB(236, 242, 255), ZIndex = 2, Parent = banner })
                 end
 
                 local sbody = new("Frame", { Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, LayoutOrder = 1,
-                    Parent = sec }, { pad(10, 10, 10, 10), list(6) })
+                    Parent = sec }, { pad(10, 9, 10, 9), list(7) })
 
                 local Section = {}
                 local flagPrefix = Tab.Name .. "/" .. pname .. "/" .. tostring(title or "") .. "/"
@@ -583,14 +556,17 @@ function Library:CreateWindow(cfg)
                     local row = new("Frame", { Name = "Toggle", Size = UDim2.new(1, 0, 0, 16), BackgroundTransparency = 1, LayoutOrder = nextOrder(), Parent = sbody })
                     local lbl = new("TextLabel", { Size = UDim2.new(1, -34, 1, 0), BackgroundTransparency = 1, W = "Medium", Text = opts.Title,
                         TextSize = 10, TextColor3 = T.TextOff, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = row })
-                    local pill = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(24, 13),
+                    local pill = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(26, 14),
                         BackgroundColor3 = T.Off, BorderSizePixel = 0, Parent = row }, { corner(7) })
+                    local pst = stroke(T.Border, 1, 0.4)
+                    pst.Parent = pill
                     local knob = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 2, 0.5, 0), Size = UDim2.fromOffset(9, 9),
                         BackgroundColor3 = T.KnobOff, BorderSizePixel = 0, Parent = pill }, { corner(5) })
                     local click = new("TextButton", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 3, Parent = row })
 
                     local function paint(v)
                         tween(pill, { BackgroundColor3 = v and T.Accent or T.Off }, 0.15)
+                        tween(pst, { Color = v and shade(T.Accent, 0.3) or T.Border, Transparency = v and 0 or 0.4 }, 0.15)
                         tween(knob, { Position = v and UDim2.new(1, -11, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
                             BackgroundColor3 = v and Color3.new(1, 1, 1) or T.KnobOff }, 0.15)
                         lbl.TextColor3 = v and T.Text or T.TextOff
@@ -644,7 +620,7 @@ function Library:CreateWindow(cfg)
                     if opts.Title then caption(holder, opts.Title, 0) end
                     local box = new("Frame", { Size = UDim2.new(1, 0, 0, 24), BackgroundColor3 = T.Element, BorderSizePixel = 0, LayoutOrder = 1, Parent = holder },
                         { corner(4) })
-                    local bst = stroke(T.Border, 1)
+                    local bst = stroke(T.Border, 1, 0.5)
                     bst.Parent = box
                     local input = new("TextBox", { Position = UDim2.fromOffset(9, 0), Size = UDim2.new(1, -18, 1, 0), BackgroundTransparency = 1,
                         W = "Medium", TextSize = 10, TextColor3 = T.Text, Text = opts.Default or "", PlaceholderText = opts.Placeholder or "",
@@ -746,7 +722,7 @@ function Library:CreateWindow(cfg)
                     if opts.Title then caption(holder, opts.Title, 0) end
                     local box = new("Frame", { Size = UDim2.new(1, 0, 0, 23), BackgroundColor3 = T.Element, BorderSizePixel = 0, LayoutOrder = 1, Parent = holder },
                         { corner(4) })
-                    local bst = stroke(T.Border, 1)
+                    local bst = stroke(T.Border, 1, 0.5)
                     bst.Parent = box
                     local vtext = new("TextLabel", { Position = UDim2.fromOffset(9, 0), Size = UDim2.new(1, -30, 1, 0), BackgroundTransparency = 1, W = "Medium",
                         TextSize = 10, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = box })
