@@ -125,6 +125,12 @@ local function paintBanner(frame, radius, texture)
             ColorSequenceKeypoint.new(1, shade(c, 0.06)),
         })
     end)
+    if radius == 0 then
+        -- section headers: thin light edge like the reference
+        local es = stroke(T.Accent, 1, 0.55)
+        es.Parent = frame
+        onAccent(function(c) es.Color = shade(c, 0.4) end)
+    end
     local ov = new("Frame", { Name = "Ripples", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1),
         BorderSizePixel = 0, Parent = frame }, { corner(radius) })
     new("UIGradient", { Rotation = 24, Parent = ov, Transparency = NumberSequence.new({
